@@ -1,4 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <title>Hello, world!</title>
+  </head>
+<body>
+
+<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+
+<!-- This is the JSX include -->
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+
+<!-- my stuff starts here -->
+
+<div id="table-test"></div>
+
+<script type="text/babel">
+const NEW_FIND = Symbol('NEW_FIND')
+const LAST_FOUND = Symbol('LAST_FOUND')
+
+class ResultTable extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {}
+  }
+
+  submitAnswer(callback) {
+
+  }
+
+  render() {
+  	let header = (
+  		<tr>
+  		{['x',1,2,3,4,5,6,7,8,9,10,11,12].map( (val) => 
+  			{
+  			let key = `header-${val}`;
+  			let td = <th key={key}>{val}</th>
+  			return td;
+  		})}
+  		</tr>
+  	)
+  	let questionList = Array.apply(null, {length: 144}).map(Number.call, Number)
+
+  	// var body = <tr><td>'test 1'</td></tr>
+  	// body += <tr><td>'test 2'</td></tr>
+
+  	let body = []
+  	for(var i=0; i<12; i++) {
+  		let rowlabelkey = `rowlabel-${i+1}`
+  		let cells = [<th key={rowlabelkey}>{i+1}</th>]
+	  	for(var j=0; j<12; j++) {
+	  		let index = i*12+j;
+	  		let cellkey = `cell-${index}`
+	  		var value = '_'
+	  		var domclass = ''
+	  		if (this.props.answeredQuestions[index] == true) {
+	  			domclass = 'new-find'
+	  			value = (i+1)*(j+1)
+	  		}
+	  		cells.push(<td key={cellkey}>{value}</td>)
+	  	}
+	  	let rowkey = `key-${i+1}`
+	  	body.push(<tr key={rowkey}>{cells}</tr>)
+  	}
+
+  	return (
+  		<table class='table table-sm text-center'>
+  		<thead class='thead-dark'>{header}</thead>
+  		<tbody class='thead-dark'>{body}</tbody>
+  		</table>
+  	)
+  }
+
+}
+
+class AnswerBox extends React.Component{
+
+// table of 0..143
+
+  constructor(props) {
+    super(props);
+    this.state = { 
+    	questionIndex: 0,
+    	remainingQuestions: Array.apply(null, {length: 144}).map(Number.call, Number),
+    	answeredQuestions: []
+    	};
+    this.handleSubmit = this.handleSubmit.bind(this);    
+    this.state.questionIndex = this.pickNewQuestion(); // for bootstrap has to be called manually??
+  }
+
+  pickNewQuestion() {
+  	let qs = this.state.remainingQuestions;
+  	let newQuestionIndex = qs[Math.floor(Math.random() * qs.length)]
+  	this.setState({'questionIndex': newQuestionIndex})
+  	return newQuestionIndex;
+  }
+
+  removeCurrentQuestion() {
+  	let newQuestionList = this.state.remainingQuestions.filter((index) => {return index != this.state.questionIndex});
+  	this.setState({'remainingQuestions': newQuestionList})
+  }
+
+  factors(pos) {
+	let x = pos % 12
+	let y = (pos-x)/12
+
+	return {'x':x+1,'y':y+1} // since x/y are 0-indexed.
+  }
+
+  handleSubmit(event) {
+  	let answer=event.target.childNodes[1].value;
+  	let qi = this.state.questionIndex;
+  	let f = this.factors(qi);
+
+  	if( answer == f.x * f.y ) {
+  		console.log("Good job")
+  		let newAnsweredQuestions = [...this.state.answeredQuestions]
+  		newAnsweredQuestions[qi] = true
+  		this.setState({'answeredQuestions': newAnsweredQuestions})
+  		this.removeCurrentQuestion();
+  	} else {
+  		console.log(`OOF... you thought that ${f.x}x${f.y} was ${answer}, but it's really ${f.x*f.y}. Shame!`)
+  	}
+
+	this.pickNewQuestion();
+	event.target.childNodes[1].value = "" // clear out the answerbox.
+
+    event.preventDefault();
+  }
+
+
+  render() {
+  	let f = this.factors(this.state.questionIndex)
+
+  	return (
+  		<div>
+	    <ResultTable answeredQuestions={this.state.answeredQuestions}/>
+  		<div class="mx-auto" style={{'width':'300px'}}>
+	  	<form onSubmit={this.handleSubmit} autoComplete='off'>
+	 	<h1 id='question-text'>{`What is ${f.x} X ${f.y}?`}</h1>
+	 	<input type='text' class="form-control-lg" id='answer-input'/>
+	 	</form>
+  		</div>
+  		</div>
+  	);
+  }
+}
+
+
+// Start DOM Rendering.
+ReactDOM.render(
+	<div>
+		<AnswerBox/>
+	</div>
+	, document.getElementById("table-test")
+);
+
+</script>
+
+
+
+ <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+</body>
+</html>
+
+<!--
 <html>
   <body style="background-image:url('https://github.com/cmcconomy/cmcconomy.github.io/raw/master/grid.gif');background-repeat:repeat;">
   </body>
 </html>
+-->
